@@ -1,23 +1,39 @@
 <?php
 require_once __DIR__ . '/lineBot.php';
-require_once __DIR__ . '/chopper.php';
-$bot = new Linebot();
-$text = $bot->getMessageText();
-$query = mysqli_query ($ conn, "select reply from replay where accept  = '". $ text. "'");
+require_once __DIR__ . '/connect.php';
+$bot   = new Linebot();
+$text  = $bot->getMessageText();
 
-if (mysqli_num_rows ($ query)> 0) {
+// แบ่งคำด้วยช่องว่า
+$textArray = explode(" ", trim($text));
 
-      while ($ has = mysqli_fetch_row ($ query)) {
-
-            $ answer = $ has ['0'];
-
-      }
-
-} else {
-
-      $ answer = "sorry, I do not know what you mean";
+$ans = "";
+if (sizeof($textArray) == 1)
+{
+	// กรณีส่งมาคำเดียว เช่น "A"
+	$query = mysqli_query($conn, "select * from incomingreport where Code = '". $textArray[0] . "'");
+	if (mysqli_num_rows($query) > 0) {
+		while ($row = mysqli_fetch_array($query, MYSQLI_ASSOC)) {
+			$ans .= $row["Incoming date"] ." | ". $row["Channel"] . " | " .$row["Quantity"] ." แผ่น". "\n";
+		}
+	} else {
+		$ans = "ขอโทษค่ะ ฉันไม่รู้ว่าคุณหมายความว่าอย่างไร"."\n"."กรุณาพิมพ์ Code"."\n"."หรือ Code Channel ค่ะ";
+	}
 
 }
+else
+{
+	// กรณีส่งมาสองคำ เช่น "A export"
+	$query = mysqli_query($conn, "select * from incomingreport where Code = '" . $textArray[0] . "' and Channel = '" . $textArray[1] . "'");
+	if (mysqli_num_rows($query) > 0) {
+		while ($row = mysqli_fetch_array($query, MYSQLI_ASSOC)) {
+			$ans .= $row["Incoming date"] . " | " . $row["Quantity"] ." แผ่น". "\n";
+		}
+	} else {
+		$ans = "ขอโทษค่ะ ฉันไม่รู้ว่าคุณหมายความว่าอย่างไร"."\n"."กรุณาพิมพ์ Code หรือ Code Channel ค่ะ" ;
+	}
+}
 
-$bot->reply($text);
+
+$bot->reply($ans);
 ?>
